@@ -39,10 +39,12 @@ http://open.dc.gov/civic.json
     if not licensed:
         ask = """
 ========================
+
 I also see that your repository has no license. 
 Without a license, others have no permission to use, modify, or share your code.
 
 This site makes it easy to add an open source license: http://choosealicense.com/
+
 ========================
 
         """
@@ -67,6 +69,15 @@ def convert(old, name, repository, description, homepage, license=''):
         new['links'].append(old['moreInfo'])
     new['thumbnail'] = deep_hasattr(old, 'thumbnailUrl')
     new['type'] = deep_hasattr(old, 'type')
+    if deep_hasattr(old, 'data'):
+        for data in old['data']:
+            d = {"name": "", "url": "", "metadata": ""}
+            d['name'] = data
+            d['url'] = old['data'][data]
+            new['data'].append(d)
+    if deep_hasattr(old, 'categories'):
+        for category in old['categories']:
+            new['tags'].append(category.values()[0])
     if deep_hasattr(old, 'geography'):
         new['geography'].append(old['geography'])
     if deep_hasattr(old, 'governmentPartner'):
@@ -112,7 +123,7 @@ if __name__ == '__main__':
 
     github_headers = {'Authorization': 'token {}'.format(ACCESS_TOKEN), 'Accept': 'application/vnd.github.drax-preview+json'}
 
-    for project in [projects[0]]:
+    for project in projects[1:]:
         name = project.keys()[0].strip()
         repository = project.values()[0].strip()
         repository_name = repository.split('/')[-1]
@@ -125,6 +136,7 @@ if __name__ == '__main__':
             try:
                 license = repo['license']['key']
             except:
+                license = ''
                 licensed = False
             intro, outro = create_message(licensed)
             civic_url = 'https://raw.githubusercontent.com/{0}/{1}/civic.json'.format(repo['full_name'], repo['default_branch'])
